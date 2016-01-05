@@ -175,24 +175,35 @@ def fit_predict_model(city_data):
     # 1. Find an appropriate performance metric. This should be the same as the
     # one used in your performance_metric procedure above:
     # http://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html
-    scorer = make_scorer(mean_squared_error)    
+    scorer = make_scorer(mean_squared_error, greater_is_better=False )    
     # 2. We will use grid search to fine tune the Decision Tree Regressor and
     # obtain the parameters that generate the best training performance. Set up
     # the grid search object here.
     # http://scikit-learn.org/stable/modules/generated/sklearn.grid_search.GridSearchCV.html#sklearn.grid_search.GridSearchCV
-   # pdb.set_trace()
     reg = grid_search.GridSearchCV( regressor , parameters,  scorer) 
 
     # Fit the learner to the training data to obtain the best parameter set
     print "Final Model: "
-    
-    print reg.fit(X, y)
-    
+
+    reg.fit(X, y)
+    print "Best model parameter:  " + str( reg.best_params_)   
+
     # Use the model to predict the output of a particular sample
     x = [11.95, 0.00, 18.100, 0, 0.6590, 5.6090, 90.00, 1.385, 24, 680.0, 20.20, 332.09, 12.13]
     y = reg.predict(x)
     print "House: " + str(x)
     print "Prediction: " + str(y)
+    return x, y
+
+
+def find_nearest_neighbor_indexes(x, X):  # x is your vector and X is the data set.
+   from sklearn.neighbors import NearestNeighbors
+   neigh = NearestNeighbors( n_neighbors = 10 )
+   neigh.fit( X)
+   distance, indexes = neigh.kneighbors( x )
+   return indexes
+
+
 
 #In the case of the documentation page for GridSearchCV, it might be the case that the example is just a demonstration of syntax for use of the function, rather than a statement about 
 def main():
@@ -218,7 +229,16 @@ def main():
     model_complexity(X_train, y_train, X_test, y_test)
 
     # Tune and predict Model
-    fit_predict_model(city_data)
+    house, sspred = fit_predict_model(city_data)
+
+    # Find Nearest Neighbors average 
+    indexes = find_nearest_neighbor_indexes(house , city_data.data)
+    sum_prices = []
+    for i in indexes:
+        sum_prices.append(city_data.target[i])
+    neighbor_avg = np.mean(sum_prices)
+    print "Nearest Neighbors average: " +str(neighbor_avg)
+
 
 
 if __name__ == "__main__":
